@@ -13,11 +13,6 @@ export function authMiddleware(
   response: Response,
   next: NextFunction,
 ): void {
-  if (!config.jwtSecret) {
-    response.status(500).json({ error: 'JWT_SECRET is not configured' });
-    return;
-  }
-
   const authorization = request.header('authorization');
   const token = authorization?.startsWith('Bearer ')
     ? authorization.slice(7)
@@ -25,6 +20,11 @@ export function authMiddleware(
 
   if (!token) {
     response.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  if (!config.jwtSecret) {
+    response.status(500).json({ error: 'JWT_SECRET is not configured' });
     return;
   }
 

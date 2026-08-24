@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import type { ErrorRequestHandler } from 'express';
 
+import { AppError } from '../types/api';
+
 interface PrismaErrorDetail {
   status: number;
   message: string;
@@ -15,8 +17,16 @@ const prismaErrorMap: Record<string, PrismaErrorDetail> = {
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
   console.error(error);
 
+  if (error instanceof AppError) {
+    response.status(error.statusCode).json({ success: false, error: { code: error.code, message: error.message } });
+    return;
+  }
+
   if (error instanceof SyntaxError && 'status' in error && error.status === 400) {
-    response.status(400).json({ error: 'Invalid JSON body' });
+    response.status(400).json({
+      success: false,
+      error: { code: 'INVALID_JSON', message: 'Invalid JSON body' },
+    });
     return;
   }
 
@@ -25,11 +35,15 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
       prismaErrorMap[error.code] ??
       { status: 500, message: 'Database request failed', appError: 'DATABASE_ERROR' };
 
-    response
-      .status(details.status)
-      .json({ error: details.message, appError: details.appError, code: error.code });
+    response.status(details.status).json({
+      success: false,
+      error: { code: details.appError, message: details.message },
+    });
     return;
   }
 
-  response.status(500).json({ error: 'Internal server error' });
+  response.status(500).json({
+    success: false,
+    error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' },
+  });
 };
