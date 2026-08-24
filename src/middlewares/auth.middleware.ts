@@ -2,12 +2,13 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
 import { config } from '../config/env';
+import type { AuthTokenPayload, UserRole } from '../types/auth';
 
 export interface AuthenticatedRequest extends Request {
-  user?: jwt.JwtPayload;
+  user?: AuthTokenPayload;
 }
 
-export function authenticateToken(
+export function authMiddleware(
   request: AuthenticatedRequest,
   response: Response,
   next: NextFunction,
@@ -29,9 +30,23 @@ export function authenticateToken(
 
   try {
     const payload = jwt.verify(token, config.jwtSecret);
-    request.user = typeof payload === 'string' ? { sub: payload } : payload;
+    if (typeof payload === 'string' || !isAuthTokenPayload(payload)) {
+      response.status(401).json({ error: 'Invalid token' });
+      return;
+    }
+
+    request.user = payload;
     next();
   } catch {
     response.status(401).json({ error: 'Invalid token' });
   }
 }
+
+function isAuthTokenPayload(payload: jwt.JwtPayload): payload is AuthTokenPayload {
+  return (
+    typeof payload.sub === 'string' &&
+    (payload.role === 'ADMIN' || payload.role === 'CAISSIER')
+  );
+}
+
+export const authenticateToken = authMiddleware;
