@@ -38,6 +38,8 @@ model Utilisateur {
   motDePasseHash String
   role           RoleUser       @default(CAISSIER)
   ventes         Vente[]
+  depenses       Depense[]
+  reglements     ReglementClient[]
   clotures       ClotureCaisse[]
   createdAt      DateTime       @default(now())
 }
@@ -76,6 +78,7 @@ model Vente {
   totalTVA         Decimal           @db.Decimal(14, 2)
   totalTTC         Decimal           @db.Decimal(14, 2)
   montantPaye      Decimal           @db.Decimal(14, 2)
+  modePaiement      ModePaiement
   clientId         Int?
   client           Client?           @relation(fields: [clientId], references: [id])
   utilisateurId    Int
@@ -117,6 +120,8 @@ model ReglementClient {
   vente        Vente?       @relation(fields: [venteId], references: [id])
   clientId     Int
   client       Client       @relation(fields: [clientId], references: [id])
+  utilisateurId Int
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id])
   createdAt    DateTime     @default(now())
 }
 
@@ -135,15 +140,26 @@ model Depense {
   description  String?
   categorieId  Int
   categorie    DepenseCategorie @relation(fields: [categorieId], references: [id])
+  utilisateurId Int
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id])
   createdAt    DateTime         @default(now())
 }
 
 model ClotureCaisse {
-  id             Int         @id @default(autoincrement())
-  soldeTheorique Decimal     @db.Decimal(14, 2)
-  soldeReel      Decimal     @db.Decimal(14, 2)
-  ecart          Decimal     @db.Decimal(14, 2)
-  utilisateurId  Int
-  utilisateur    Utilisateur @relation(fields: [utilisateurId], references: [id])
-  createdAt      DateTime    @default(now())
+  id                   Int         @id @default(autoincrement())
+  dateCloture          DateTime    @db.Date
+  fondDeCaisse         Decimal     @db.Decimal(14, 2)
+  soldeTheorique       Decimal     @db.Decimal(14, 2)
+  soldeReel            Decimal     @db.Decimal(14, 2)
+  ecart                Decimal     @db.Decimal(14, 2)
+  totalEspeces         Decimal     @db.Decimal(14, 2)
+  totalMobileMoney     Decimal     @db.Decimal(14, 2)
+  totalCarte           Decimal     @db.Decimal(14, 2)
+  totalVirement        Decimal     @db.Decimal(14, 2)
+  totalDepensesEspeces Decimal     @db.Decimal(14, 2)
+  utilisateurId        Int
+  utilisateur          Utilisateur @relation(fields: [utilisateurId], references: [id])
+  createdAt            DateTime    @default(now())
+
+  @@unique([utilisateurId, dateCloture])
 }
