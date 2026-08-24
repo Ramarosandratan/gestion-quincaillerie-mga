@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 
 import { prisma } from '../config/prisma';
 import { AppError } from '../types/api';
+import { ensureCashRegisterOpen } from './cash-register.service';
 
 const TVA_RATE = new Prisma.Decimal('0.20');
 
@@ -205,6 +206,7 @@ export async function createSale(input: SaleInput, userId: number) {
   }
 
   return prisma.$transaction(async (transaction) => {
+    await ensureCashRegisterOpen(transaction, userId);
     const calculatedLines = await calculateLines(transaction, input.lignes as SaleLineInput[]);
     const { totalHT, totalTVA, totalTTC } = totalSales(calculatedLines);
     if (paid.gt(totalTTC)) {

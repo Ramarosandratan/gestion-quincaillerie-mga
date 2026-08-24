@@ -1,7 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 
 import { AppError } from '../types/api';
-import { addStock, createProduct, deactivateProduct, getProduct, listCriticalProducts, listProducts, updateProduct } from '../services/product.service';
+import { addStock, adjustStock, createProduct, deactivateProduct, getProduct, listCriticalProducts, listProducts, searchProducts, updateProduct } from '../services/product.service';
+import type { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 function idFromRequest(request: Request): number {
   const id = Number(request.params.id);
@@ -15,6 +16,11 @@ export async function getProducts(_request: Request, response: Response, next: N
 
 export async function getProductById(request: Request, response: Response, next: NextFunction) {
   try { response.json({ success: true, data: await getProduct(idFromRequest(request)) }); } catch (error) { next(error); }
+}
+
+export async function searchProductList(request: Request, response: Response, next: NextFunction) {
+  const query = typeof request.query.q === 'string' ? request.query.q : '';
+  try { response.json({ success: true, data: await searchProducts(query) }); } catch (error) { next(error); }
 }
 
 export async function getProductAlerts(_request: Request, response: Response, next: NextFunction) {
@@ -34,5 +40,9 @@ export async function deleteProduct(request: Request, response: Response, next: 
 }
 
 export async function postStockEntry(request: Request, response: Response, next: NextFunction) {
-  try { response.status(201).json({ success: true, data: await addStock(request.body) }); } catch (error) { next(error); }
+  try { response.status(201).json({ success: true, data: await addStock(request.body, Number((request as AuthenticatedRequest).user?.sub)) }); } catch (error) { next(error); }
+}
+
+export async function postStockAdjustment(request: Request, response: Response, next: NextFunction) {
+  try { response.status(201).json({ success: true, data: await adjustStock(request.body, Number((request as AuthenticatedRequest).user?.sub)) }); } catch (error) { next(error); }
 }

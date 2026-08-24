@@ -3,6 +3,7 @@ import { Prisma, StatutVente } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import { AppError } from '../types/api';
 import type { ClosureInput, ExpenseInput, PaymentMode, SettlementInput } from '../types/treasury';
+import { ensureCashRegisterOpen } from './cash-register.service';
 
 const TVA_RATE = new Prisma.Decimal('0.20');
 const PAYMENT_MODES = new Set<PaymentMode>(['ESPECES', 'CARTE', 'VIREMENT', 'MOBILE_MONEY']);
@@ -60,17 +61,20 @@ export async function createExpense(input: ExpenseInput, userId: number) {
   const categorie = await prisma.depenseCategorie.findUnique({ where: { id: categorieId } });
   if (!categorie) throw new AppError(404, 'CATEGORY_NOT_FOUND', 'Catégorie de dépense introuvable.');
 
-  return prisma.depense.create({
-    data: {
-      montantHT,
-      montantTVA,
-      montantTTC,
-      modePaiement: mode(input.modePaiement),
-      description: typeof input.description === 'string' ? input.description.trim() || undefined : undefined,
-      categorieId,
-      utilisateurId: userId,
-    },
-    include: { categorie: true },
+  return prisma.$transaction(async (transaction) => {
+    await ensureCashRegisterOpen(transaction, userId);
+    return transaction.depense.create({
+      data: {
+        montantHT,
+        montantTVA,
+        montantTTC,
+        modePaiement: mode(input.modePaiement),
+        description: typeof input.description === 'string' ? input.description.trim() || undefined : undefined,
+        categorieId,
+        utilisateurId: userId,
+      },
+      include: { categorie: true },
+    });
   });
 }
 
@@ -81,6 +85,7 @@ export async function createSettlement(clientIdValue: unknown, input: Settlement
   const venteId = input.venteId === undefined || input.venteId === null ? null : integerId(input.venteId, 'INVALID_SALE_ID', 'L’identifiant de la vente est invalide.');
 
   return prisma.$transaction(async (transaction) => {
+    await ensureCashRegisterOpen(transaction, userId);
     const lockedClients = await transaction.$queryRaw<{ id: number }[]>(
       Prisma.sql`SELECT "id" FROM "Client" WHERE "id" = ${clientId} FOR UPDATE`,
     );

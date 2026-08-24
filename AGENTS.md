@@ -8,6 +8,7 @@ The planned system is a full JavaScript/TypeScript web application: an Express/N
 ## Build, Test, and Development Commands
 - `npm run dev` starts the API with `tsx` watch mode.
 - `npm run build` compiles `src/` to `dist/` with TypeScript.
+- `npm test` runs the Vitest/Supertest integration checks.
 - `npm start` runs the compiled API.
 - `npx prisma validate` checks the Prisma schema.
 - `npx prisma migrate dev --name <name>` creates and applies a migration; it requires a valid local `DATABASE_URL` in `.env`.
