@@ -225,6 +225,7 @@ export async function createSale(input: SaleInput, userId: number) {
         totalTVA,
         totalTTC,
         montantPaye: paid,
+        modePaiement: mode,
         clientId,
         utilisateurId: userId,
         lignes: { create: calculatedLines },
@@ -236,7 +237,7 @@ export async function createSale(input: SaleInput, userId: number) {
     await registerStockMovements(transaction, calculatedLines, productsById, sale.referenceFacture);
 
     if (clientId !== null && paid.gt(0)) {
-      await transaction.reglementClient.create({ data: { montant: paid, modePaiement: mode, venteId: sale.id, clientId } });
+      await transaction.reglementClient.create({ data: { montant: paid, modePaiement: mode, venteId: sale.id, clientId, utilisateurId: userId } });
     }
     if (clientId !== null && !outstanding.isZero()) {
       await transaction.client.update({ where: { id: clientId }, data: { detteActuelle: { increment: outstanding } } });
