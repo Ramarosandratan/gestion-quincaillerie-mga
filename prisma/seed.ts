@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import bcrypt from 'bcrypt';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, RoleUser } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 const defaultExpenseCategories = [
   'Loyer',
