@@ -119,7 +119,7 @@ model ReglementClient {
 
 model DepenseCategorie {
   id       Int       @id @default(autoincrement())
-  libelle  String
+  libelle  String    @unique
   depenses Depense[]
 }
 
