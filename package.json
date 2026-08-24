@@ -7,6 +7,7 @@
     "build": "tsc",
     "db:seed": "prisma db seed",
     "dev": "tsx watch src/server.ts",
+    "postinstall": "prisma generate",
     "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,6 +24,7 @@
   },
   "homepage": "https://github.com/Ramarosandratan/gestion-quincaillerie-mga#readme",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
