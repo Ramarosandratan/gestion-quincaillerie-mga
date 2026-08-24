@@ -1,6 +1,17 @@
 import { Prisma } from '@prisma/client';
 import type { ErrorRequestHandler } from 'express';
 
+interface PrismaErrorDetail {
+  status: number;
+  message: string;
+  appError: string;
+}
+
+const prismaErrorMap: Record<string, PrismaErrorDetail> = {
+  P2025: { status: 404, message: 'Resource not found', appError: 'NOT_FOUND' },
+  P2002: { status: 409, message: 'Unique constraint violation', appError: 'UNIQUE_CONFLICT' },
+};
+
 export const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
   console.error(error);
 
@@ -10,8 +21,13 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
   }
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    const status = error.code === 'P2025' ? 404 : error.code === 'P2002' ? 409 : 500;
-    response.status(status).json({ error: 'Database request failed', code: error.code });
+    const details =
+      prismaErrorMap[error.code] ??
+      { status: 500, message: 'Database request failed', appError: 'DATABASE_ERROR' };
+
+    response
+      .status(details.status)
+      .json({ error: details.message, appError: details.appError, code: error.code });
     return;
   }
 
