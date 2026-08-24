@@ -62,6 +62,7 @@ model Produit {
   quantiteStock Decimal          @default(0.00) @db.Decimal(14, 3)
   cump          Decimal          @default(0.00) @db.Decimal(14, 2)
   seuilAlerte   Decimal          @default(5.00) @db.Decimal(14, 3)
+  estActif      Boolean          @default(true)
   mouvements    MouvementStock[]
   lignesVente   LigneVente[]
   createdAt     DateTime         @default(now())
