@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoleUser {
+  ADMIN
+  CAISSIER
+}
+
+enum TypeMouvement {
+  ENTREE
+  SORTIE_VENTE
+  PERTE
+  AJUSTEMENT
+}
+
+enum StatutVente {
+  PAYEE
+  PARTIELLE
+  IMPAYEE
+}
+
+enum ModePaiement {
+  ESPECES
+  CARTE
+  VIREMENT
+  MOBILE_MONEY
+}
+
+model Utilisateur {
+  id             Int            @id @default(autoincrement())
+  nom            String
+  email          String         @unique
+  motDePasseHash String
+  role           RoleUser       @default(CAISSIER)
+  ventes         Vente[]
+  clotures       ClotureCaisse[]
+  createdAt      DateTime       @default(now())
+}
+
+model Client {
+  id            Int               @id @default(autoincrement())
+  nom           String
+  telephone     String?
+  plafondCredit Decimal           @default(0.00) @db.Decimal(14, 2)
+  detteActuelle Decimal           @default(0.00) @db.Decimal(14, 2)
+  ventes        Vente[]
+  reglements    ReglementClient[]
+  createdAt     DateTime          @default(now())
+}
+
+model Produit {
+  id            Int              @id @default(autoincrement())
+  reference     String           @unique
+  designation   String
+  prixAchatHT   Decimal          @db.Decimal(14, 2)
+  prixVenteHT   Decimal          @db.Decimal(14, 2)
+  quantiteStock Decimal          @default(0.00) @db.Decimal(14, 3)
+  cump          Decimal          @default(0.00) @db.Decimal(14, 2)
+  seuilAlerte   Decimal          @default(5.00) @db.Decimal(14, 3)
+  mouvements    MouvementStock[]
+  lignesVente   LigneVente[]
+  createdAt     DateTime         @default(now())
+}
+
+model Vente {
+  id               Int               @id @default(autoincrement())
+  referenceFacture String            @unique
+  statutPaiement   StatutVente       @default(PAYEE)
+  totalHT          Decimal           @db.Decimal(14, 2)
+  totalTVA         Decimal           @db.Decimal(14, 2)
+  totalTTC         Decimal           @db.Decimal(14, 2)
+  montantPaye      Decimal           @db.Decimal(14, 2)
+  clientId         Int?
+  client           Client?           @relation(fields: [clientId], references: [id])
+  utilisateurId    Int
+  utilisateur      Utilisateur       @relation(fields: [utilisateurId], references: [id])
+  lignes           LigneVente[]
+  reglements       ReglementClient[]
+  createdAt        DateTime          @default(now())
+}
+
+model LigneVente {
+  id             Int      @id @default(autoincrement())
+  quantite       Decimal  @db.Decimal(14, 3)
+  prixUnitaireHT Decimal  @db.Decimal(14, 2)
+  totalTTC       Decimal  @db.Decimal(14, 2)
+  venteId        Int
+  vente          Vente    @relation(fields: [venteId], references: [id])
+  produitId      Int
+  produit        Produit  @relation(fields: [produitId], references: [id])
+}
+
+model MouvementStock {
+  id             Int            @id @default(autoincrement())
+  type           TypeMouvement
+  quantite       Decimal        @db.Decimal(14, 3)
+  coutUnitaireHT Decimal        @db.Decimal(14, 2)
+  motif          String?
+  produitId      Int
+  produit        Produit        @relation(fields: [produitId], references: [id])
+  createdAt      DateTime       @default(now())
+}
+
+model ReglementClient {
+  id           Int          @id @default(autoincrement())
+  montant      Decimal      @db.Decimal(14, 2)
+  modePaiement ModePaiement
+  venteId      Int?
+  vente        Vente?       @relation(fields: [venteId], references: [id])
+  clientId     Int
+  client       Client       @relation(fields: [clientId], references: [id])
+  createdAt    DateTime     @default(now())
+}
+
+model DepenseCategorie {
+  id       Int       @id @default(autoincrement())
+  libelle  String
+  depenses Depense[]
+}
+
+model Depense {
+  id           Int              @id @default(autoincrement())
+  montantHT    Decimal          @db.Decimal(14, 2)
+  montantTVA   Decimal          @db.Decimal(14, 2)
+  montantTTC   Decimal          @db.Decimal(14, 2)
+  modePaiement ModePaiement
+  description  String?
+  categorieId  Int
+  categorie    DepenseCategorie @relation(fields: [categorieId], references: [id])
+  createdAt    DateTime         @default(now())
+}
+
+model ClotureCaisse {
+  id             Int         @id @default(autoincrement())
+  soldeTheorique Decimal     @db.Decimal(14, 2)
+  soldeReel      Decimal     @db.Decimal(14, 2)
+  ecart          Decimal     @db.Decimal(14, 2)
+  utilisateurId  Int
+  utilisateur    Utilisateur @relation(fields: [utilisateurId], references: [id])
+  createdAt      DateTime    @default(now())
+}
