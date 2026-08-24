@@ -89,6 +89,8 @@ model LigneVente {
   id             Int      @id @default(autoincrement())
   quantite       Decimal  @db.Decimal(14, 3)
   prixUnitaireHT Decimal  @db.Decimal(14, 2)
+  totalHT        Decimal  @db.Decimal(14, 2)
+  totalTVA       Decimal  @db.Decimal(14, 2)
   totalTTC       Decimal  @db.Decimal(14, 2)
   venteId        Int
   vente          Vente    @relation(fields: [venteId], references: [id])

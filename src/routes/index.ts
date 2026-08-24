@@ -5,6 +5,7 @@ import { loginController } from '../controllers/auth.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { roleMiddleware } from '../middlewares/role.middleware';
 import { deleteProduct, getProductAlerts, getProductById, getProducts, postProduct, postStockEntry, putProduct } from '../controllers/product.controller';
+import { postSale } from '../controllers/sale.controller';
 
 export const apiRouter = Router();
 
@@ -18,3 +19,4 @@ apiRouter.post('/produits', authMiddleware, roleMiddleware(['ADMIN']), postProdu
 apiRouter.put('/produits/:id', authMiddleware, roleMiddleware(['ADMIN']), putProduct);
 apiRouter.delete('/produits/:id', authMiddleware, roleMiddleware(['ADMIN']), deleteProduct);
 apiRouter.post('/stocks/entree', authMiddleware, roleMiddleware(['ADMIN']), postStockEntry);
+apiRouter.post('/ventes', authMiddleware, postSale);
