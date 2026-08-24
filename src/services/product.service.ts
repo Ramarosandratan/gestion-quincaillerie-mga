@@ -22,7 +22,7 @@ export interface StockEntryInput {
 function positiveDecimal(value: unknown, code: string, message: string): Prisma.Decimal {
   let parsed: Prisma.Decimal;
   try {
-    parsed = new Prisma.Decimal(String(value));
+    parsed = new Prisma.Decimal(value as string | number);
   } catch {
     throw new AppError(400, code, message);
   }
@@ -35,7 +35,7 @@ function positiveDecimal(value: unknown, code: string, message: string): Prisma.
 function nonNegativeDecimal(value: unknown, code: string, message: string): Prisma.Decimal {
   let parsed: Prisma.Decimal;
   try {
-    parsed = new Prisma.Decimal(String(value));
+    parsed = new Prisma.Decimal(value as string | number);
   } catch {
     throw new AppError(400, code, message);
   }
@@ -43,6 +43,10 @@ function nonNegativeDecimal(value: unknown, code: string, message: string): Pris
     throw new AppError(400, code, message);
   }
   return parsed;
+}
+
+function rounded(value: Prisma.Decimal): Prisma.Decimal {
+  return value.toDecimalPlaces(2);
 }
 
 function requiredText(value: unknown, field: string): string {
@@ -59,7 +63,6 @@ function productValues(input: ProductInput) {
     reference: requiredText(input.reference, 'La référence'),
     designation: requiredText(input.designation, 'La désignation'),
     prixAchatHT,
-    cump: prixAchatHT,
     prixVenteHT: positiveDecimal(input.prixVenteHT, 'INVALID_PRICE', 'Le prix de vente doit être supérieur à zéro.'),
     quantiteStock: nonNegativeDecimal(input.quantiteStock ?? 0, 'INVALID_QUANTITY', 'La quantité doit être positive ou nulle.'),
     seuilAlerte: nonNegativeDecimal(input.seuilAlerte ?? 5, 'INVALID_ALERT_THRESHOLD', "Le seuil d'alerte doit être positif ou nul."),
@@ -90,12 +93,17 @@ export async function getProduct(id: number) {
 }
 
 export async function createProduct(input: ProductInput) {
-  return prisma.produit.create({ data: productValues(input) });
+  const values = productValues(input);
+  return prisma.produit.create({ data: { ...values, cump: values.prixAchatHT } });
 }
 
 export async function updateProduct(id: number, input: ProductInput) {
   await getProduct(id);
-  return prisma.produit.update({ where: { id }, data: productValues(input) });
+  const { reference, designation, prixAchatHT, prixVenteHT, seuilAlerte } = productValues(input);
+  return prisma.produit.update({
+    where: { id },
+    data: { reference, designation, prixAchatHT, cump: prixAchatHT, prixVenteHT, seuilAlerte },
+  });
 }
 
 export async function deactivateProduct(id: number) {
@@ -117,11 +125,13 @@ export async function addStock(input: StockEntryInput) {
     if (!product) throw new AppError(404, 'PRODUCT_NOT_FOUND', 'Produit introuvable.');
 
     const currentQuantity = new Prisma.Decimal(product.quantiteStock);
-    const currentCump = new Prisma.Decimal(product.prixAchatHT);
+    const currentCump = new Prisma.Decimal(product.cump);
     const totalQuantity = currentQuantity.plus(quantity);
-    const newCump = currentQuantity.isZero()
-      ? purchasePrice
-      : currentQuantity.times(currentCump).plus(quantity.times(purchasePrice)).div(totalQuantity);
+    const newCump = rounded(
+      currentQuantity.isZero()
+        ? purchasePrice
+        : currentQuantity.times(currentCump).plus(quantity.times(purchasePrice)).div(totalQuantity),
+    );
 
     const updatedProduct = await transaction.produit.update({
       where: { id: produitId },

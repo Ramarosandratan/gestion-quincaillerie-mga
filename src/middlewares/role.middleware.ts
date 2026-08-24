@@ -8,7 +8,10 @@ export function roleMiddleware(roles: UserRole[]) {
     const role = request.user?.role;
 
     if (!role || !roles.includes(role)) {
-      response.status(403).json({ error: 'Insufficient permissions' });
+      response.status(403).json({
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'Accès refusé : droits insuffisants.' },
+      });
       return;
     }
 
