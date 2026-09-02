@@ -6,13 +6,18 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 import { roleMiddleware } from '../middlewares/role.middleware';
 import { deleteProduct, getProductAlerts, getProductById, getProducts, postProduct, postStockAdjustment, postStockEntry, putProduct, searchProductList } from '../controllers/product.controller';
 import { postSale } from '../controllers/sale.controller';
-import { postClosure, postExpense, postSettlement } from '../controllers/treasury.controller';
+import { getExpenseCategories, getExpenses, postClosure, postExpense, postSettlement } from '../controllers/treasury.controller';
+import { getClients, postClient } from '../controllers/client.controller';
+import { getDashboard } from '../controllers/dashboard.controller';
 
 export const apiRouter = Router();
 
 apiRouter.get('/health', getHealth);
 apiRouter.post('/auth/login', loginController);
 
+apiRouter.get('/clients', authMiddleware, getClients);
+apiRouter.post('/clients', authMiddleware, postClient);
+apiRouter.get('/dashboard/stats', authMiddleware, getDashboard);
 apiRouter.get('/produits', authMiddleware, getProducts);
 apiRouter.get('/produits/alertes', authMiddleware, getProductAlerts);
 apiRouter.get('/produits/search', authMiddleware, searchProductList);
@@ -23,6 +28,8 @@ apiRouter.delete('/produits/:id', authMiddleware, roleMiddleware(['ADMIN']), del
 apiRouter.post('/stocks/entree', authMiddleware, roleMiddleware(['ADMIN']), postStockEntry);
 apiRouter.post('/stocks/ajustement', authMiddleware, roleMiddleware(['ADMIN']), postStockAdjustment);
 apiRouter.post('/ventes', authMiddleware, postSale);
+apiRouter.get('/depenses', authMiddleware, getExpenses);
+apiRouter.get('/depenses/categories', authMiddleware, getExpenseCategories);
 apiRouter.post('/depenses', authMiddleware, postExpense);
 apiRouter.post('/clients/:id/reglements', authMiddleware, postSettlement);
 apiRouter.post('/caisse/cloture', authMiddleware, postClosure);

@@ -15,6 +15,27 @@ const defaultExpenseCategories = [
   'Autres',
 ];
 
+const defaultProducts = [
+  {
+    reference: 'CAB-25',
+    designation: 'Câble électrique 2.5mm',
+    prixAchatHT: 2800,
+    prixVenteHT: 4500,
+    quantiteStock: 42,
+    cump: 2800,
+    seuilAlerte: 5,
+  },
+  {
+    reference: 'PER-BOSCH',
+    designation: 'Perceuse Bosch GSB',
+    prixAchatHT: 145000,
+    prixVenteHT: 185000,
+    quantiteStock: 1,
+    cump: 145000,
+    seuilAlerte: 3,
+  },
+];
+
 function requiredEnvironmentVariable(name: string): string {
   const value = process.env[name]?.trim();
 
@@ -56,7 +77,17 @@ async function main(): Promise<void> {
     ),
   );
 
-  console.log(`Seeded admin ${adminEmail} and ${defaultExpenseCategories.length} expense categories`);
+  await Promise.all(
+    defaultProducts.map((product) =>
+      prisma.produit.upsert({
+        where: { reference: product.reference },
+        update: product,
+        create: product,
+      }),
+    ),
+  );
+
+  console.log(`Seeded admin ${adminEmail}, ${defaultExpenseCategories.length} expense categories and ${defaultProducts.length} products`);
 }
 
 main()

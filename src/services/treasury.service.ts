@@ -53,6 +53,17 @@ function dayBounds(date: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
+export function listExpenseCategories() {
+  return prisma.depenseCategorie.findMany({ orderBy: { libelle: 'asc' } });
+}
+
+export function listExpenses() {
+  return prisma.depense.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: { categorie: true },
+  });
+}
+
 export async function createExpense(input: ExpenseInput, userId: number) {
   const montantHT = positive(input.montantHT, 'INVALID_AMOUNT', 'Le montant HT doit être strictement supérieur à zéro.');
   const montantTVA = montantHT.times(TVA_RATE).toDecimalPlaces(2);
